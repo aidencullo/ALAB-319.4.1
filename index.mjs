@@ -12,8 +12,8 @@ app.get("/", (req, res) => {
   res.send("Welcome to the API.");
 });
 
-app.use("/grades", grades);
 app.use("/grades", grades_agg);
+app.use("/grades", grades);
 
 // Global error handling
 app.use((err, _req, res, next) => {

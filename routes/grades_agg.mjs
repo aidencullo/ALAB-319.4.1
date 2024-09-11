@@ -82,4 +82,10 @@ router.get("/learner/:id/avg-class", async (req, res) => {
   else res.send(result).status(200);
 });
 
+
+// Get the weighted average of a specified learner's grades, per class
+router.get("/stats", async (req, res) => {
+  return res.send("Not implemented").status(501);
+});
+
 export default router;
