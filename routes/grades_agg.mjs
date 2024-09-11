@@ -168,4 +168,30 @@ router.get("/stats", async (req, res) => {
   else res.send(result).status(200);
 });
 
+router.get("/stats/:id", async (req, res) => {
+  const class_id = parseInt
+  let collection = await db.collection("grades");
+
+  let result = await collection
+      .aggregate([
+	{
+          $group: {
+            _id: "$learner_id",
+	    sum: { $sum: 1 },
+          },
+	},
+	{
+          $project: {
+            _id: 0,
+            learner_id: "$_id",
+	    total_classes: "$sum",
+          },
+	},
+      ])
+      .toArray();
+
+  if (!result) res.send("Not found").status(404);
+  else res.send(result).status(200);
+});
+
 export default router;
