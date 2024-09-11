@@ -135,8 +135,33 @@ router.get("/stats", async (req, res) => {
             },
           },
 	},
+	{
+          // Add a stage to differentiate learners with avg > 50
+          $group: {
+            _id: null,
+            total_learners: { $sum: 1 },
+            learners_above_50: {
+              $sum: {
+		$cond: [{ $gt: ["$avg", 50] }, 1, 0],
+              },
+            },
+          },
+	},
+	{
+          // Project the final stats
+          $project: {
+            _id: 0,
+            total_learners: 1,
+            learners_above_50: 1,
+	    percentage_passing: {
+              $multiply: [
+		{ $divide: ["$learners_above_50", "$total_learners"] },
+		100,
+              ],
+            },
+          },
+	},
       ])
-      .limit(1)
       .toArray();
 
   if (!result) res.send("Not found").status(404);
