@@ -14,4 +14,6 @@ try {
 
 let db = conn.db("sample_training");
 
+await db.collection("grades").createIndex({ class_id: 1 });
+
 export default db;
