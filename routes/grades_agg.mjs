@@ -169,22 +169,100 @@ router.get("/stats", async (req, res) => {
 });
 
 router.get("/stats/:id", async (req, res) => {
-  const class_id = parseInt
   let collection = await db.collection("grades");
+
+  const unwind = {
+    $unwind: { path: "$scores" },
+  };
+
+  const group = 	{
+    $group: {
+      _id: "$learner_id",
+      quiz: {
+	$push: {
+	  $cond: {
+            if: { $eq: ["$scores.type", "quiz"] },
+            then: "$scores.score",
+            else: "$$REMOVE",
+	  },
+	},
+      },
+      exam: {
+	$push: {
+	  $cond: {
+            if: { $eq: ["$scores.type", "exam"] },
+            then: "$scores.score",
+            else: "$$REMOVE",
+	  },
+	},
+      },
+      homework: {
+	$push: {
+	  $cond: {
+            if: { $eq: ["$scores.type", "homework"] },
+            then: "$scores.score",
+            else: "$$REMOVE",
+	  },
+	},
+      },
+      classes: {
+	$push: "$class_id",
+      },
+    },
+  };
+
+  const project = {
+    $project: {
+      _id: 0,
+      learner_id: "$_id",
+      avg: {
+	$sum: [
+	  { $multiply: [{ $avg: "$exam" }, 0.5] },
+	  { $multiply: [{ $avg: "$quiz" }, 0.3] },
+	  { $multiply: [{ $avg: "$homework" }, 0.2] },
+	],
+      },
+      classes: "$classes",
+    },
+  };
+
+  const match = {
+    $match: {
+      classes: parseInt(req.params.id),
+    }
+  };
+  
 
   let result = await collection
       .aggregate([
+	unwind,
+	group,
+	project,
+	match,
 	{
+          // Add a stage to differentiate learners with avg > 50
           $group: {
-            _id: "$learner_id",
-	    sum: { $sum: 1 },
+            _id: null,
+            total_learners: { $sum: 1 },
+            learners_above_50: {
+              $sum: {
+		$cond: [{ $gt: ["$avg", 50] }, 1, 0],
+              },
+            },
           },
 	},
 	{
+          // Project the final stats
           $project: {
             _id: 0,
-            learner_id: "$_id",
-	    total_classes: "$sum",
+            total_learners: 1,
+            learners_above_50: 1,
+	    percentage_passing: {
+              $multiply: [
+		{ $divide: ["$learners_above_50", "$total_learners"] },
+		100,
+              ],
+            },
           },
 	},
       ])
