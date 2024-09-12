@@ -34,17 +34,21 @@ await db.collection("grades").createIndex({ learner_id: 1, class_id: 1 });
           class_id: {
             bsonType: "int",
             minimum: 0,
-	    maximum: 300,
+            maximum: 300,
           },
-	  learner_id: {
-	    bsonType: "int",
-	    minimum: 0,
-	  },
+          learner_id: {
+            bsonType: "int",
+            minimum: 0,
+          },
         },
       },
     },
+    validationAction: "warn", // Set validation action to warn
   });
 })();
+
+// Change the validation action to "warn."
+
 
 // fails verification
 // db.collection("grades").insertOne({ class_id: 1 });
